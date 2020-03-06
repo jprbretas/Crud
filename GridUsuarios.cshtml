@@ -1,0 +1,62 @@
+﻿@using padvMVC.Models
+@using padvMVC.Negocio
+
+
+<div id="ajaxgrid">
+    @{
+
+        var defaultSort = "";
+        if (ViewBag.defaultSort != null)
+        {
+            defaultSort = ViewBag.defaultSort;
+        }
+        else
+        {
+            defaultSort = "user_name";
+        }
+
+        var grid = new WebGrid(Model, defaultSort: "", canPage: true, rowsPerPage: Model.Count == 0 ? 1 : Model.Count, ajaxUpdateContainerId: "ajaxgrid", ajaxUpdateCallback: "GridUpdate");
+
+    @MvcHtmlString.Create(grid.GetHtml(
+          tableStyle: "table table-condensed table-hover table-striped",
+          exclusions: new[] { "" },
+          headerStyle: "btn-primary",
+          footerStyle: "btn-primary",
+          firstText: GeralResource.RecRes(40),
+          previousText: GeralResource.RecRes(41),
+          nextText: GeralResource.RecRes(42),
+          lastText: GeralResource.RecRes(43),
+          mode: WebGridPagerModes.All,
+
+     columns:
+        grid.Columns(
+
+            grid.Column("", header: "{CheckBoxHeading}", format: @<text> <input type="checkbox" class="box" id="chk_select" value="@item.user_id" /> </text>),
+                      grid.Column("user_name", CodeHelper.Sorter("user_name", GeralResource.RecRes(15), grid)),//Código
+                      grid.Column("user_email", CodeHelper.Sorter("user_email", GeralResource.RecRes(19), grid)),
+                     grid.Column("user_company", CodeHelper.Sorter("user_company", GeralResource.RecRes(16), grid)),
+     grid.Column("countries.name", CodeHelper.Sorter("countries.name", GeralResource.RecRes(17), grid)),
+    grid.Column("user_head_representative", CodeHelper.Sorter("user_head_representative", GeralResource.RecRes(134), grid)),
+    grid.Column("user_phone", CodeHelper.Sorter("user_phone", GeralResource.RecRes(18), grid)),
+    grid.Column("user_blocked", CodeHelper.Sorter("user_blocked", GeralResource.RecRes(68), grid), format: @<text> <input type="checkbox" disabled @(Convert.ToBoolean(item["user_blocked"]) == true ? "checked" : "" ) /> </text>),
+    grid.Column("user_date_register", CodeHelper.Sorter("user_date_register", GeralResource.RecRes(00), grid), format: @<text> @( item["user_date_register"] != null ? ((DateTime)item["user_date_register"]).ToShortDateString() : "" ) </text> ),
+    grid.Column("user_date_expire", CodeHelper.Sorter("user_date_expire", GeralResource.RecRes(64), grid), format: @<text> @( item["user_date_expire"] != null ? ((DateTime)item["user_date_expire"]).ToShortDateString() : "" ) </text> ),
+    grid.Column("date_answer", CodeHelper.Sorter("date_answer", GeralResource.RecRes(152), grid), format: @<text> @( item["date_answer"] != null ? ((DateTime)item["date_answer"]).ToShortDateString() : "" ) </text> ),
+     grid.Column("comments", CodeHelper.Sorter("comments", GeralResource.RecRes(171), grid))
+
+                      )).ToString().Replace("{CheckBoxHeading}", "<input type='checkbox' class='checkbox' id='allBox'/>"))
+}
+
+    @Html.Hidden("Sortgrid_user", grid.SortColumn == "" ? defaultSort : grid.SortColumn)
+    @Html.Hidden("dir_grid_user", grid.SortDirection)
+</div>
+
+<script>
+    $("#regqtd").html('Registros: ' + '@grid.TotalRowCount.ToString()');
+    SortCollumnGrid("ajaxgrid", $("#Sortgrid_user").val(), $("#dir_grid_user").val());
+    function EditData() {
+    @CodeHelper.DataForm(Model,Html)
+    }
+
+</script>
+

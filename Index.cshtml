@@ -1,0 +1,199 @@
+﻿
+@{
+    ViewBag.Title = GeralResource.RecRes(462);
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@using System.Web.Optimization;
+@using padvMVC.Models
+
+<main class="p-main">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 col-sm-12 col-lg-12 col-md-12 bg_person_sys">
+                <h3> Usuários do Sistema <span id="regqtd" style="float:right;"></span></h3>  <hr />
+                <div class="col-lg-12 col-sm-12 col-md-12">
+
+                    <div class="modal fade" id="ModalGenEdit" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false" aria-labelledby="labelmodaledit" aria-hidden="true">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="labelmodaledit">@Html.Raw(GeralResource.RecRes(00))</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="col-12 col-md-12 col-lg-12 col-sm-12">
+                                        @using (Html.BeginForm(null, null, FormMethod.Post, new { id = "formGeneric" }))
+                                        {
+                                            <div id="content_form">
+                                                @Html.Partial("Form",new Exist_UsersDto())
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">@Html.Raw(GeralResource.RecRes(478))</button>
+                                    <button type="button" id="btnSalvar" onclick="Salvar()" class="btn btn-primary">Salvar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @Html.Partial("~/Views/Adms_do_Sistema/_ModalHistorico.cshtml")
+
+                    <div class="row row-padding-10">
+                        <div class="col-lg-8 col-sm-8 col-md-8">
+                            <button id="btnIncluir" class="btn btn-dark" onclick="Incluir()"> <img src="~/img/add-list.png" /> Incluir</button>
+                            <button id="btnEditar" class="btn btn-dark" onclick="Editar()"> <img src="~/img/edit.png" /> Editar</button>
+                            <button id="btnExcluir" class="btn btn-dark" onclick="Excluir()"> <img src="~/img/delete.png" /> Excluir</button>
+                            <button id="btnHistorico" class="btn btn-dark" onclick="Historico()"> <img src="~/img/icone_historico.png" /> Histórico </button>
+                            <button id="btnLicenca" class="btn btn-dark" onclick="Licenca()"> <img src="~/img/icone_licenca.png" /> Licença </button>
+                        </div>
+                        <div class="col-lg-4 col-sm-4 col-md-4">
+                            <div class="row row-padding-10">
+                                <div class="col-lg-8 col-sm-8 col-md-8">
+                                    <input name="" type="text" class="form-control" id="txtbusca">
+                                    <span id="resposta" style=""></span>
+                                </div>
+                                <div class="col-lg-4 col-sm-4 col-md-4">
+                                    <button type="button" name="" class="btn btn-primary btn-md" id="BtnBuscar" onclick="Buscar()"> Pesquisar </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="col-lg-12 col-sm-12 col-md-12">
+                    <div id="divgrid_content" class="content_grid GridOverFlow">
+
+                    </div>
+                    <div id="divgrid_wait" style="display:none">
+                        @Html.Partial("~/Views/Shared/Wait.cshtml")
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</main>
+
+
+<script>
+
+    window.load = LoadPage();
+
+    function LoadPage() {
+
+        LoadGridUsuarios('', '');
+    }
+
+    function Incluir() {
+        
+        ClearForm('formGeneric');
+        $("#formGeneric").attr('action', '/Atualizar_Usuarios/Incluir');
+        $("#labelmodaledit").html('Incluir Usuário');
+        $("#ModalGenEdit").modal();
+    }
+
+    function Editar() {
+        selection = GetListSelection("divgrid_content");
+        if (selection.length == 1) {
+            ClearForm('formGeneric');
+            EditData();
+            $("#formGeneric").attr('action', '/Atualizar_Usuarios/Editar');
+            $("#labelmodaledit").html('Editar Usuário');
+            $("#ModalGenEdit").modal();
+        } else if (selection.length > 1) {
+            ModalMsg('Atenção', 'Selecione apenas um registro');
+        } else {
+            ModalMsg('Atenção', 'Nenhum registro selecionado');
+        }
+
+    }
+    function Excluir() {
+        selection = GetListSelection("divgrid_content");
+        if (selection.length >= 1) {
+
+            localStorage.getItem("selection", selection[0]);
+            ModalConfirm("Atenção", "Deseja mesmo excluir esse registro(s) ?", "/Controller/Excluir");
+            //ClearForm('formGeneric');
+            //EditData();
+            //$("#formGeneric").attr('action', '/Adms_do_Sistema/Excluir');
+            //$("#labelmodaledit").html('Editar Usuário');
+            //$("#ModalGenEdit").modal();
+        } else {
+            ModalMsg('Atenção', 'Selecione apenas um registro');
+        }
+
+
+    }
+    function Salvar() {
+
+        alert($("#formGeneric").serialize());
+
+        $.ajax({
+            type: 'POST',
+            url: $("#formGeneric").attr('action'),
+            data: $("#formGeneric").serialize(),
+            success: function (data) {
+                if (data.status == "success") {
+                    $("#ModalGenEdit").modal('hide');
+                    ModalMsg('Sucesso', 'Registro Salvo com Sucesso');
+                } else if (data.status == "validation") {
+                    $("#content_form").html(data.view);
+                } else {
+                    ModalMsg('Atenção', 'Ocorreu um erro. Contacte o administrador');
+                }
+
+            }, beforeSend: function () {
+
+            }, complete: function () {
+
+            }
+        });
+
+
+    }
+
+    function Licenca() {
+
+    }
+
+    $("#txtbusca").keypress(function (e) {
+        if (e.which == 13 || e.keyCode == 13) {
+            e.preventDefault();
+            $("#BtnBuscar").click();
+        }
+
+    });
+
+    function Buscar() {
+        var value = $.trim($("#txtbusca").val());
+        var coluna = $("#Sortgrid_user").val();
+        LoadGridUsuarios(value, coluna);
+    }
+
+
+    function LoadGridUsuarios(texto, coluna) {
+
+        $.ajax({
+            type: 'POST',
+            url: "/Atualizar_Usuarios/LoadGridUsuarios",
+            data: { texto: texto, coluna: coluna },
+            success: function (data) {
+                $("#divgrid_content").html(data);
+
+            }, beforeSend: function () {
+                $("#divgrid_content").hide();
+                $("#divgrid_wait").show();
+            }, complete: function () {
+                $("#divgrid_wait").hide();
+                $("#divgrid_content").show();
+            }
+        });
+
+    }
+
+</script>
